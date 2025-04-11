@@ -81,8 +81,7 @@ def main(args):
         delta=args.augment_chunk_size,
     )
     
-    train_dataset = SSL_dataset(glob.glob(os.path.join(args.data_path, 'train/P11*.npy')), transform_aug=augment, label=False)
-    # train_dataset = SSL_dataset(glob.glob(os.path.join(args.data_path, 'train/*.npy')), transform_aug=augment, label=False)
+    train_dataset = SSL_dataset(glob.glob(os.path.join(args.data_path, 'train/*.npy')), transform_aug=augment, label=False)
     train_loader = DataLoader(
         train_dataset,
         batch_size=args.batch_size,

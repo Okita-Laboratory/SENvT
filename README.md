@@ -7,7 +7,7 @@ pip install -r req.txt
 ```
 
 ```bash
-python pretrain.py
+python pretrain.py --data-path=<dataset path>
 ```
 
 ```bash

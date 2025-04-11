@@ -189,7 +189,7 @@ def main(args):
     ###############
     # setup model #
     ###############
-    ckpt = torch.load(args.ckpt)
+    ckpt = torch.load(args.ckpt, weights_only=False)
     model = SENvT.__dict__[ckpt['args'].model_size](
         window_size=ckpt['args'].window_size,
         patch_size=ckpt['args'].patch_size,
