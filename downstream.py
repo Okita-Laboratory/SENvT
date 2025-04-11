@@ -1,11 +1,11 @@
 import os
 import sys
 import copy
+import glob
 import argparse
 import numpy as np
 from datetime import datetime
 import matplotlib.pyplot as plt
-import seaborn as sns
 from sklearn.metrics import (
     confusion_matrix,
     accuracy_score,
@@ -135,7 +135,6 @@ def plot_fig(log):
 
 def test_evaluation(trues, preds, best_epoch):
     print(f'best epoch: {best_epoch}')
-    
     acc = accuracy_score(trues, preds)
     rec = recall_score(trues, preds, average='macro')
     pre = precision_score(trues, preds, average='macro')
@@ -144,12 +143,8 @@ def test_evaluation(trues, preds, best_epoch):
     print('recall   :', rec)
     print('precision:', pre)
     print('f1       :', f1s)
-    
-    fig = plt.figure(figsize=(8,8))
-    sns.heatmap(confusion_matrix(trues, preds), square=True, cbar=True, annot=True, cmap='Blues')
-    plt.xlabel('pred')
-    plt.ylabel('true')
-    return acc, rec, pre, f1s, plt
+    print(f'confusion matrix:\n {confusion_matrix(trues, preds)}')
+    return acc, rec, pre, f1s
 
 
 def main(args):
@@ -158,15 +153,13 @@ def main(args):
     args.results_dir = os.path.join(
         args.results_dir, args.dataset,
         'fine-tuning' if args.finetuning else 'transfer_learning',
-        datetime.now().strftime('%d-%m-%Y_%H:%M:%S'),
     )
-    
-    if args.num_repeat > 0:
-        os.makedirs(os.path.join(args.results_dir, 'ckpt_bests'), exist_ok=True)
-        os.makedirs(os.path.join(args.results_dir, 'figures'), exist_ok=True)
-        os.makedirs(os.path.join(args.results_dir, 'confusion_matrix'), exist_ok=True)
-    else:
-        os.makedirs(args.results_dir, exist_ok=True)
+    os.makedirs(args.results_dir, exist_ok=True)
+    log_index = len(glob.glob(f"{args.results_dir}/*"))
+    args.results_dir = os.path.join(args.results_dir, f'{log_index:03d}')
+
+    os.makedirs(os.path.join(args.results_dir, 'ckpt_bests'), exist_ok=True)
+    os.makedirs(os.path.join(args.results_dir, 'figures'), exist_ok=True)
     
     sys.stdout = Logger(os.path.join(args.results_dir, 'output.log'))
     print('\n## Configuration: ')
@@ -234,9 +227,7 @@ def main(args):
         # test eval #
         #############
         loss, acc, _, trues, preds = evaluate_model(best['model'], test_loader, loss_fn=nn.CrossEntropyLoss(), device=device, dtype=args.dtype)
-        acc, rec, pre, f1, plt = test_evaluation(trues, preds, best['epoch'])
-        plt.savefig(os.path.join(args.results_dir, 'confusion_matrix', f'{i:02d}.pdf'))
-        plt.close()
+        acc, rec, pre, f1 = test_evaluation(trues, preds, best['epoch'])
 
         accs.append(acc)
         f1s.append(f1)
