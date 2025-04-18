@@ -38,7 +38,7 @@ python pretrain.py --window-size=500 --num-channels=6
 <details>
 <summary>Training Objectives</summary>
 
-<img src='./images/objectives.png' width=256><br>
+<img src='./images/objectives.png' width=512><br>
 - 訓練目的は，データ拡張により変化を加えたデータと元データとの"誤差"を最小化すること．
 - `--augment-chunk-size`でデータ拡張を適応するチャンクを設定可能．デフォルトでは`50`．ウィンドウサイズが`300`とすると`6`つに分割され各々がランダムに変換されるもしくは何もしない．
 - 図の例ではmaskだけが適応されているが，他にもデータ拡張手法を追加できる．
@@ -69,5 +69,6 @@ attention層で他のtokenから参照できないように設定
 ```bash
 python downstream.py \
     --ckpt=<pre-trained model path> \
+    --data-path=<downstream dataset path> \
     --dataset=pamap \
 ```

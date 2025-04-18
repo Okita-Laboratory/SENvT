@@ -243,7 +243,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--results-dir', type=str, default='./experiment_log/downstream')
     parser.add_argument("--ckpt", type=str, default='<pre-trained model path>')
-    parser.add_argument('--data-path', type=str, default='<downstream data path>')
+    parser.add_argument('--data-path', type=str, default='<downstream dataset path>')
     parser.add_argument('--dataset', type=str, default='adl', choices=['adl','oppo','pamap','realworld','wisdm'])
     parser.add_argument("--finetuning", type=bool_flag, default=True) # True: fine-tuning, False: transfer learning
     parser.add_argument('--num-repeat', type=int, default=5)

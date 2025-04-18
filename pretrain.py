@@ -196,7 +196,7 @@ if __name__ == '__main__':
     parser.add_argument('--log-interval', type=int, default=100)
     parser.add_argument('--patience', type=int, default=10)
     # data #
-    parser.add_argument('--data-path', type=str, default='../signal_data/experiment_data/30hz_10.0s_overlap0.0s/capture24/')
+    parser.add_argument('--data-path', type=str, default='<dataset path>')
     parser.add_argument('--batch-size', type=int, default=1024)
     parser.add_argument('--num-workers', type=int, default=4)
     parser.add_argument('--augment-chunk-size', type=int, default=50)
