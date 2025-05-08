@@ -79,7 +79,46 @@ class SignalAugmentation(object):
         return x, (r, self.nc, self.rotation_true)
 
 
-class MultiTaskLoss:
+# class MultiTaskLoss:
+#     def __init__(self, task_dict, task_num):
+#         self.task_dict = task_dict
+#         self.task_num = task_num
+#         self.loss_dict = {'mask': 0., 'permute': 0., 'timewarp': 0., 'rotation': 0., 'wdba': 0., 'rgw': 0., 'dgw': 0.}
+#         self.rotation_loss_fn = nn.CrossEntropyLoss()
+#         self.rotation_loss_ratio = 0.333
+        
+#     def __call__(self, pred, ground, r_pred=None, r_true=None, task_pos=None):
+#         squared_error = (pred - ground)**2
+#         se = squared_error.transpose(1,2)
+        
+#         loss = 0.
+#         for task in self.loss_dict.keys():
+#             if self.task_dict[task]:
+#                 if task=='rotation':
+#                     r_mask = (task_pos==self.task_num['rotation'])
+#                     self.loss_dict[task] = self.calc_rotation_loss(r_pred, r_true, mask=r_mask)
+#                 else:
+#                     self.loss_dict[task] = torch.mean(se[task_pos==self.task_num[task]])
+#             else:
+#                 self.loss_dict[task] = 0.
+#             loss += self.loss_dict[task]
+#         return loss, self.loss_dict
+    
+#     def calc_rotation_loss(self, pred, true, mask=None):
+#         (N, nsplits, C,_), (_, L) = pred.shape, mask.shape
+#         delta = L // nsplits
+        
+#         mask = mask.reshape(N, -1, delta).to(dtype=torch.float16).mean(dim=-1).to(dtype=torch.bool)
+#         true_idx, _ = torch.where(mask)
+        
+#         pred = pred[mask]
+#         true = true[true_idx].to(pred.device)
+        
+#         loss = self.rotation_loss_fn(pred.reshape(-1, C), true.reshape(-1))
+#         return loss * self.rotation_loss_ratio
+
+
+class MultiTaskLoss(nn.Module):
     def __init__(self, task_dict, task_num):
         self.task_dict = task_dict
         self.task_num = task_num
@@ -87,7 +126,7 @@ class MultiTaskLoss:
         self.rotation_loss_fn = nn.CrossEntropyLoss()
         self.rotation_loss_ratio = 0.333
         
-    def __call__(self, pred, ground, r_pred=None, r_true=None, task_pos=None):
+    def forward(self, pred, ground, r_pred=None, r_true=None, task_pos=None):
         squared_error = (pred - ground)**2
         se = squared_error.transpose(1,2)
         
@@ -116,3 +155,4 @@ class MultiTaskLoss:
         
         loss = self.rotation_loss_fn(pred.reshape(-1, C), true.reshape(-1))
         return loss * self.rotation_loss_ratio
+
