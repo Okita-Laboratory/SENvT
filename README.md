@@ -1,5 +1,12 @@
 # SENvT
 
+## Changelog
+- v1.0 (beta)
+   - MSE損失を用いたマルチタスク訓練によるSENvTの初期実装
+- v1.1
+   - MSE損失に加えて、量子化を使用したクロスエントロピー損失を追加
+   - モデルのエンコーダを少し修正
+
 ## Installation
 ```bash
 conda create -n <env name> python==3.12

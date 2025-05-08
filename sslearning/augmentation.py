@@ -19,9 +19,16 @@ def rotation(x):
         flip[:,np.newaxis,:] * x[:,:,rotate_axis],
         rotate_axis
     )
+
 def rotation_torch(x):
+    # x: (B, L, C)
     B, L, C = x.shape
-    return torch.stack([x[:,:,c] for c in torch.randperm(C)], dim=2)
+    device = x.device
+    # Random permutation for each sample in the batch
+    rotate_axis = torch.stack([torch.randperm(C, device=device) for _ in range(B)], dim=0)  # (B, C)
+    # Gather and flip
+    x_rot = torch.gather(x, 2, rotate_axis.unsqueeze(1).expand(-1, L, -1))
+    return x_rot, rotate_axis
 
 def permutation(x, max_segments=5, seg_mode="equal"):
     orig_steps = np.arange(x.shape[1])
@@ -83,11 +90,53 @@ def time_warp(x, sigma=0.2, knot=4):
             scale = (x.shape[1]-1)/time_warp[-1]
             ret[i,:,dim] = np.interp(orig_steps, np.clip(scale*time_warp, 0, x.shape[1]-1), pat[:,dim]).T
     return ret
-def time_warp_torch(x, gamma=1.0, bandwidth=None):
-    B, L, C = x.shape
+
+def time_warp_torch(x: torch.Tensor, sigma=0.2, knot=4):
+    # x: (B, C, L)
+    B, C, L = x.shape
+    device = x.device
+    orig_steps = torch.arange(L, device=device, dtype=torch.float32)
+
+    # ランダムなワープパラメータ生成
+    random_warps = torch.normal(1.0, sigma, size=(B, knot+2, C), device=device)
+    warp_steps = torch.linspace(0, L-1, steps=knot+2, device=device).unsqueeze(1).repeat(1, C)  # (knot+2, C)
+
+    # CubicSplineの代用: torchで線形補間
+    def cubic_spline_torch(xp, yp, xq):
+        # xp: (N,), yp: (N,), xq: (M,)
+        # 線形補間（近似）
+        inds = torch.searchsorted(xp.contiguous(), xq, right=True) - 1
+        inds = inds.clamp(0, len(xp)-2)
+        x0 = xp[inds]
+        x1 = xp[inds+1]
+        y0 = yp[inds]
+        y1 = yp[inds+1]
+        slope = (y1 - y0) / (x1 - x0 + 1e-8)
+        return y0 + slope * (xq - x0)
+
+    ret = torch.zeros_like(x)
+    for i in range(B):
+        for dim in range(C):
+            # 時間ワープ曲線生成
+            ws = warp_steps[:, dim]
+            rw = random_warps[i, :, dim]
+            # ワープ先の時間軸
+            time_warp = cubic_spline_torch(ws, ws * rw, orig_steps)
+            scale = (L-1) / (time_warp[-1] + 1e-8)
+            warped_steps = torch.clamp(scale * time_warp, 0, L-1)
+            # 線形補間で値を取得
+            pat = x[i, dim, :]
+            inds = warped_steps.long()
+            frac = warped_steps - inds
+            next_inds = torch.clamp(inds+1, max=L-1)
+            val = pat[inds] * (1 - frac) + pat[next_inds] * frac
+            ret[i, dim, :] = val
+    return ret
+
 # def time_warp_torch(x, sigma=0.2, knot=4):
 #     from scipy.interpolate import CubicSpline
 #     from torch import Tensor
+#     import torch
 #     def interp(x: Tensor, xp: Tensor, fp: Tensor) -> Tensor:
 #         m = (fp[1:] - fp[:-1]) / (xp[1:] - xp[:-1])
 #         b = fp[:-1] - (m * xp[:-1])

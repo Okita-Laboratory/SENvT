@@ -3,6 +3,7 @@ import torch
 import numpy as np
 import matplotlib.pyplot as plt
 import collections
+import argparse
 
 class Logger:
     def __init__(self, filename):
